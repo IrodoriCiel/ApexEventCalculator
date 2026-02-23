@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Apex Event Milestone Calculator</title>
+    <meta name="description"
+        content="Calculadora de Apex Coins y Metales de Fabricación para eventos de colección de Apex Legends." />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@300;400;600;700;900&display=swap');
+
+        /* ── VARIABLES ── */
+        :root {
+            --bg0: #111214;
+            --bg1: #181a1d;
+            --bg2: #1e2126;
+            --bg3: #252930;
+            --red: #c41e3a;
+            --red2: #e8323c;
+            --red-glow: rgba(196, 30, 58, 0.45);
+            --gold: #c8a020;
+            --gold2: #f0c040;
+            --gold-glow: rgba(200, 160, 32, 0.4);
+            --cyan: #00d4e8;
+            --cyan2: #40e8f8;
+            --cyan-glow: rgba(0, 212, 232, 0.35);
+            --orange: #e8682a;
+            --orange2: #ff8c50;
+            --green: #4cde8c;
+            --purple: #9b59f7;
+            --txt1: #f0ece0;
+            --txt2: #9aa4b0;
+            --txt3: #58687a;
+            --border: rgba(255, 255, 255, 0.07);
+            --gold-border: rgba(200, 160, 32, 0.5);
+            --red-border: rgba(196, 30, 58, 0.5);
+            --r: 8px;
+            --r2: 14px;
+            --ease: .22s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: 'Exo 2', system-ui, sans-serif;
+            background: var(--bg0);
+            color: var(--txt1);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── APEX DIAMOND PATTERN BG ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                linear-gradient(45deg, rgba(255, 255, 255, .022) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255, 255, 255, .022) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, .022) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, .022) 75%);
+            background-size: 28px 28px;
+            background-position: 0 0, 0 14px, 14px -14px, -14px 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 10% 15%, rgba(196, 30, 58, .13) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 35% at 90% 85%, rgba(200, 160, 32, .08) 0%, transparent 55%);
+        }
+
+        /* ── LAYOUT ── */
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 24px 14px 70px
+        }
+
+        /* ── HEADER ── */
+        header {
+            text-align: center;
+            margin-bottom: 32px
+        }
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px
+        }
+
+        .apex-logo {
+            width: 54px;
+            height: 54px;
+            filter: drop-shadow(0 0 14px var(--red-glow))
+        }
+
+        h1 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(1.9rem, 5vw, 3rem);
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            line-height: 1;
+            background: linear-gradient(135deg, #fff 0%, var(--gold2) 45%, var(--red) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: .78rem;
+            color: var(--txt3);
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            margin-top: 6px
+        }
+
+        .hline {
+            margin-top: 16px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red) 25%, var(--gold) 75%, transparent);
+            box-shadow: 0 0 12px var(--red-glow)
+        }
+
+        /* ── BALANCE BAR (top HUD style) ── */
+        .hud-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .hud-chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(0, 0, 0, .45);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 7px 14px;
+            font-size: .82rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+        }
+
+        .hud-chip.gold-chip {
+            border-color: var(--gold-border);
+            color: var(--gold2)
+        }
+
+        .hud-chip.cyan-chip {
+            border-color: rgba(0, 212, 232, .4);
+            color: var(--cyan2)
+        }
+
+        /* ── PANEL ── */
+        .panel {
+            background: var(--bg1);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 26px 24px;
+            margin-bottom: 18px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color var(--ease), box-shadow var(--ease);
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--red), var(--gold));
+        }
+
+        .panel:hover {
+            border-color: rgba(200, 160, 32, .22);
+            box-shadow: 0 6px 32px rgba(0, 0, 0, .5)
+        }
+
+        .panel-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 20px;
+        }
+
+        /* ── INPUT GRID ── */
+        .igrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+            gap: 16px
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 7px
+        }
+
+        .field label {
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--txt2);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            /* Altura fija de 2 líneas → todos los inputs quedan alineados */
+            min-height: 2.4em;
+        }
+
+        .field label svg {
+            flex-shrink: 0
+        }
+
+        .field input[type=number] {
+            background: #0e1218;
+            border: 1px solid rgba(255, 255, 255, .11);
+            border-radius: var(--r);
+            color: var(--txt1);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            padding: 11px 14px;
+            width: 100%;
+            outline: none;
+            transition: border-color var(--ease), box-shadow var(--ease), background var(--ease);
+            -moz-appearance: textfield;
+        }
+
+        .field input[type=number]::-webkit-inner-spin-button,
+        .field input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none
+        }
+
+        .field input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(200, 160, 32, .18), var(--gold-glow)
+        }
+
+        .field input:hover:not(:focus) {
+            border-color: rgba(255, 255, 255, .2)
+        }
+
+        .field input.err {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(196, 30, 58, .2)
+        }
+
+        .hint {
+            font-size: .7rem;
+            color: var(--txt3)
+        }
+
+        /* ── BTN (estilo Apex "COMPRAR") ── */
+        .btn-calc {
+            width: 100%;
+            margin-top: 14px;
+            padding: 16px 24px;
+            background: linear-gradient(to bottom, #2e2e2e 0%, #1a0a0a 55%, #b01818 100%);
+            border: 1px solid #555;
+            border-radius: 0;
+            border-bottom: 4px solid #d94010;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: .28em;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: filter var(--ease), box-shadow var(--ease), border-color var(--ease);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .07);
+        }
+
+        .btn-calc::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 38%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, .06) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .btn-calc::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #c41e3a, #e8682a, #c41e3a);
+            transition: opacity var(--ease);
+            opacity: 0;
+        }
+
+        .btn-calc:hover {
+            filter: brightness(1.1);
+            /* Borde superior y laterales cambian a rojo-naranja, igual que el inferior */
+            border-top-color: #d94010;
+            border-left-color: #8a2800;
+            border-right-color: #8a2800;
+            border-bottom-color: #ff5520;
+            /* Resplandor INTERIOR desde arriba (sin glow exterior) */
+            box-shadow: inset 0 4px 20px rgba(217, 64, 16, 0.55),
+                inset 0 1px 0 rgba(255, 120, 40, 0.3);
+        }
+
+        .btn-calc:hover::after {
+            opacity: 1;
+        }
+
+        .btn-calc:active {
+            filter: brightness(.9);
+            transform: translateY(1px);
+        }
+
+        .btn-calc span {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, .7);
+        }
+
+        /* ── VALIDATION ── */
+        .vmsg {
+            display: none;
+            background: rgba(196, 30, 58, .12);
+            border: 1px solid rgba(196, 30, 58, .4);
+            border-radius: var(--r);
+            padding: 10px 14px;
+            font-size: .83rem;
+            color: #ff8f8f;
+            margin-top: 10px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .vmsg.show {
+            display: flex
+        }
+
+        /* ── PRICE TABLE ── */
+        details.panel summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center
+        }
+
+        details.panel summary .arrow {
+            margin-left: auto;
+            font-size: .7rem;
+            color: var(--txt3);
+            font-weight: 400;
+            transition: transform var(--ease)
+        }
+
+        details[open] summary .arrow {
+            transform: rotate(180deg)
+        }
+
+        .ptable-wrap {
+            overflow-x: auto;
+            margin-top: 18px;
+            border-radius: var(--r);
+            border: 1px solid var(--border)
+        }
+
+        table.pt {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .84rem
+        }
+
+        table.pt th {
+            background: rgba(200, 160, 32, .12);
+            color: var(--gold);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            padding: 9px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--gold-border)
+        }
+
+        table.pt td {
+            padding: 7px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            color: var(--txt2);
+            transition: background var(--ease), color var(--ease)
+        }
+
+        table.pt tr:last-child td {
+            border-bottom: none
+        }
+
+        table.pt tr:hover td {
+            background: rgba(255, 255, 255, .03);
+            color: var(--txt1)
+        }
+
+        table.pt .t1k td {
+            color: var(--purple)
+        }
+
+        table.pt .t1k td:last-child {
+            color: var(--purple)
+        }
+
+        /* ── RESULTS ── */
+        #results {
+            display: none
+        }
+
+        #results.show {
+            display: block;
+            animation: fadeUp .35s ease forwards
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        /* BANNER */
+        .banner {
+            border-radius: var(--r2);
+            padding: 20px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            border: 1px solid;
+        }
+
+        .banner.ok {
+            background: rgba(76, 222, 140, .08);
+            border-color: rgba(76, 222, 140, .35)
+        }
+
+        .banner.warn {
+            background: rgba(200, 160, 32, .08);
+            border-color: var(--gold-border)
+        }
+
+        .banner.fail {
+            background: rgba(196, 30, 58, .08);
+            border-color: var(--red-border)
+        }
+
+        .banner-ico {
+            font-size: 2.4rem;
+            flex-shrink: 0
+        }
+
+        .banner-ttl {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-bottom: 4px
+        }
+
+        .banner.ok .banner-ttl {
+            color: var(--green)
+        }
+
+        .banner.warn .banner-ttl {
+            color: var(--gold2)
+        }
+
+        .banner.fail .banner-ttl {
+            color: var(--red2)
+        }
+
+        .banner-det {
+            font-size: .88rem;
+            color: var(--txt2);
+            line-height: 1.5
+        }
+
+        .banner-det strong {
+            font-weight: 700
+        }
+
+        .banner.ok .banner-det strong {
+            color: var(--green)
+        }
+
+        .banner.warn .banner-det strong {
+            color: var(--gold2)
+        }
+
+        .banner.fail .banner-det strong {
+            color: var(--red2)
+        }
+
+        /* STAT GRID */
+        .sgrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px
+        }
+
+        .sgrid-3 {
+            grid-template-columns: repeat(3, 1fr)
+        }
+
+        .sg-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin: 0 0 8px 2px;
+            opacity: .8
+        }
+
+        .scard {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+            transition: transform var(--ease), box-shadow var(--ease);
+        }
+
+        .scard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .4)
+        }
+
+        .scard::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--ca, var(--gold))
+        }
+
+        .scard.ca-red {
+            --ca: var(--red2)
+        }
+
+        .s-cost {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            padding: 1px 6px;
+            font-size: .65rem;
+            pointer-events: none;
+        }
+
+        .scard.ca-gold {
+            --ca: var(--gold2)
+        }
+
+        .scard.ca-cyan {
+            --ca: var(--cyan)
+        }
+
+        .scard.ca-green {
+            --ca: var(--green)
+        }
+
+        .scard.ca-purple {
+            --ca: var(--purple)
+        }
+
+        .scard.ca-orange {
+            --ca: var(--orange)
+        }
+
+        .s-ico {
+            font-size: 1.4rem;
+            line-height: 1;
+            margin-bottom: 2px
+        }
+
+        .s-lbl {
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+            color: var(--txt3)
+        }
+
+        .s-val {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--ca, var(--gold))
+        }
+
+        .s-sub {
+            font-size: .72rem;
+            color: var(--txt3)
+        }
+
+        /* BREAKDOWN */
+        .bwrap {
+            overflow-x: auto;
+            border-radius: var(--r);
+            border: 1px solid var(--border)
+        }
+
+        table.bt {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem
+        }
+
+        table.bt th {
+            background: rgba(255, 255, 255, .035);
+            color: var(--gold);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            padding: 9px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border)
+        }
+
+        table.bt td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--txt2);
+            vertical-align: middle
+        }
+
+        table.bt tr:last-child td {
+            border-bottom: none
+        }
+
+        table.bt tr:hover td {
+            background: rgba(255, 255, 255, .02);
+            color: var(--txt1)
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            white-space: nowrap
+        }
+
+        .badge-coins {
+            background: rgba(200, 160, 32, .15);
+            color: var(--gold2);
+            border: 1px solid rgba(200, 160, 32, .35)
+        }
+
+        .badge-metals {
+            background: rgba(0, 212, 232, .12);
+            color: var(--cyan2);
+            border: 1px solid rgba(0, 212, 232, .3)
+        }
+
+        .badge-free {
+            background: rgba(76, 222, 140, .12);
+            color: var(--green);
+            border: 1px solid rgba(76, 222, 140, .3)
+        }
+
+        .badge-miss {
+            background: rgba(196, 30, 58, .15);
+            color: var(--red2);
+            border: 1px solid var(--red-border)
+        }
+
+        .badge-alert {
+            background: rgba(220, 100, 20, .18);
+            color: #f0a040;
+            border: 1px solid rgba(220, 100, 20, .5);
+            animation: alertPulse 1.6s ease-in-out infinite
+        }
+
+        @keyframes alertPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0px rgba(220, 100, 20, 0)
+            }
+
+            50% {
+                box-shadow: 0 0 6px rgba(220, 100, 20, .7)
+            }
+        }
+
+        table.bt tr.row-alert td {
+            background: rgba(220, 80, 20, .06);
+            border-left: 2px solid rgba(220, 100, 20, .5)
+        }
+
+        /* TIPS */
+        .tips {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 9px
+        }
+
+        .tips li {
+            display: flex;
+            gap: 9px;
+            font-size: .87rem;
+            color: var(--txt2);
+            line-height: 1.55;
+            align-items: baseline
+        }
+
+        .tips .tb {
+            color: var(--red2);
+            font-weight: 700;
+            flex-shrink: 0
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg0)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(196, 30, 58, .45);
+            border-radius: 4px
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--red)
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding-top: 18px;
+            font-size: .73rem;
+            color: var(--txt3);
+            letter-spacing: .05em
+        }
+
+        footer span {
+            color: var(--red2)
+        }
+
+        /* RESPONSIVE */
+        @media(max-width:580px) {
+            .wrap {
+                padding: 14px 10px 50px
+            }
+
+            .panel {
+                padding: 18px 14px
+            }
+
+            .sgrid {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .s-val {
+                font-size: 1.5rem
+            }
+
+            .banner {
+                flex-direction: column;
+                text-align: center;
+                gap: 8px
+            }
+
+            .hud-bar {
+                gap: 6px
+            }
+
+            .hud-chip {
+                font-size: .75rem;
+                padding: 6px 10px
+            }
+        }
+
+        @media(max-width:360px) {
+            .sgrid {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+
+        <!-- ── HEADER ── -->
+        <header>
+            <div class="logo-row">
+                <!-- Apex hexagonal logo SVG -->
+
+                <h1>Apex Event Calc</h1>
+            </div>
+            <p class="subtitle">Calculadora de Colección · Apex Legends</p>
+            <div class="hline"></div>
+        </header>
+
+        <!-- ── HUD CHIPS (visual only, show filled values after calc) ── -->
+        <div class="hud-bar" id="hudBar" style="display:none">
+            <div class="hud-chip gold-chip">
+                <!-- AC icon -->
+                <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="98" fill="#FFC107" />
+                    <circle cx="100" cy="100" r="82" fill="#212121" />
+                    <path style="fill:#ffffff"
+                        d="m 42.379182,130.11152 h 11.895911 l -2.230483,10.40892 h 14.374225 l 6.443619,-9.16976 30.235436,-0.24784 -5.452289,-15.86121 H 78.314746 L 90.70632,77.571251 114.74597,141.7596 h 43.12268 v -24.53532 h -14.37423 v 10.16109 H 127.38538 L 112.26495,70.95519 h 25.03369 4.46096 v 6.120398 h 13.3829 V 55.762082 H 78.562577 L 68.574888,93.036646 H 35.687732 l 4.367535,16.299854 h 19.672118 v 6.15296 H 35.439901 Z" />
+                </svg>
+                <span id="hudCoins">0</span>
+            </div>
+            <div class="hud-chip cyan-chip">
+                <!-- Crafting metals icon -->
+                <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="mgH" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#b8f0ff" />
+                            <stop offset="35%" stop-color="#40d8f0" />
+                            <stop offset="100%" stop-color="#1a8aaa" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Cuerpo de cada barra -->
+                    <path fill="url(#mgH)"
+                        d="m 31.722429,157.12515 22.304832,14.86989 19.330855,-1.48699 V 112.51549 L 66.72656,110.73857 V 64.931846 L 43.600429,51.579968 v 83.240352 l -3.956348,3.95635 -5.366396,-3.09829 z" />
+                    <path fill="url(#mgH)"
+                        d="m 89.219331,138.28996 23.853459,-13.7718 V 79.801735 l 4.43015,-4.430148 V 18.835192 H 95.167286 l -18.58736,18.587361 v 18.58736 h 9.169764 z" />
+                    <path fill="url(#mgH)"
+                        d="m 130.35936,52.540273 v 81.784387 l -11.04153,2.95857 v 22.32024 L 140.986,172.1136 h 19.11313 v -61.0851 l -6.38372,-1.71051 V 63.444857 Z" />
+                    <!-- Brillo: franja blanca semitransparente en la parte alta de cada barra -->
+                    <path fill="rgba(255,255,255,0.38)" d="m 35,60 18,0 0,28 -18,0 z" rx="2" />
+                    <path fill="rgba(255,255,255,0.38)" d="m 82,22 14,0 0,28 -14,0 z" rx="2" />
+                    <path fill="rgba(255,255,255,0.38)" d="m 130,57 14,0 0,28 -14,0 z" rx="2" />
+                </svg>
+                <span id="hudMetals">0</span>
+            </div>
+        </div>
+
+        <!-- ── INPUTS ── -->
+        <section class="panel">
+            <div class="panel-title">
+                <!-- controller icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="6" width="20" height="12" rx="4" />
+                    <circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                    <line x1="14" y1="10" x2="14" y2="14" />
+                    <line x1="12" y1="12" x2="16" y2="12" />
+                </svg>
+                Tus Recursos
+            </div>
+            <div class="igrid">
+
+                <div class="field">
+                    <label for="apexCoins">
+                        <svg width="20" height="20" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="100" r="98" fill="#FFC107" />
+                            <circle cx="100" cy="100" r="82" fill="#212121" />
+                            <path style="fill:#ffffff"
+                                d="m 42.379182,130.11152 h 11.895911 l -2.230483,10.40892 h 14.374225 l 6.443619,-9.16976 30.235436,-0.24784 -5.452289,-15.86121 H 78.314746 L 90.70632,77.571251 114.74597,141.7596 h 43.12268 v -24.53532 h -14.37423 v 10.16109 H 127.38538 L 112.26495,70.95519 h 25.03369 4.46096 v 6.120398 h 13.3829 V 55.762082 H 78.562577 L 68.574888,93.036646 H 35.687732 l 4.367535,16.299854 h 19.672118 v 6.15296 H 35.439901 Z" />
+                        </svg>
+                        Apex Coins
+                    </label>
+                    <input type="number" id="apexCoins" min="0" placeholder="0" autocomplete="off" />
+                    <span class="hint">Monedas disponibles actualmente</span>
+                </div>
+
+                <div class="field">
+                    <label for="craftMetals">
+                        <svg width="20" height="20" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="mgL" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#b8f0ff" />
+                                    <stop offset="35%" stop-color="#40d8f0" />
+                                    <stop offset="100%" stop-color="#1a8aaa" />
+                                </linearGradient>
+                            </defs>
+                            <path fill="url(#mgL)"
+                                d="m 31.722429,157.12515 22.304832,14.86989 19.330855,-1.48699 V 112.51549 L 66.72656,110.73857 V 64.931846 L 43.600429,51.579968 v 83.240352 l -3.956348,3.95635 -5.366396,-3.09829 z" />
+                            <path fill="url(#mgL)"
+                                d="m 89.219331,138.28996 23.853459,-13.7718 V 79.801735 l 4.43015,-4.430148 V 18.835192 H 95.167286 l -18.58736,18.587361 v 18.58736 h 9.169764 z" />
+                            <path fill="url(#mgL)"
+                                d="m 130.35936,52.540273 v 81.784387 l -11.04153,2.95857 v 22.32024 L 140.986,172.1136 h 19.11313 v -61.0851 l -6.38372,-1.71051 V 63.444857 Z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 35,60 18,0 0,28 -18,0 z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 82,22 14,0 0,28 -14,0 z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 130,57 14,0 0,28 -14,0 z" />
+                        </svg>
+                        Metales de Fabricación
+                    </label>
+                    <input type="number" id="craftMetals" min="0" placeholder="0" autocomplete="off" />
+                    <span class="hint">Metales para craftear objetos</span>
+                </div>
+
+                <div class="field">
+                    <label for="totalItems">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a020" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" rx="1" />
+                            <rect x="14" y="3" width="7" height="7" rx="1" />
+                            <rect x="3" y="14" width="7" height="7" rx="1" />
+                            <rect x="14" y="14" width="7" height="7" rx="1" />
+                        </svg>
+                        Objetos del Evento
+                    </label>
+                    <input type="number" id="totalItems" min="1" placeholder="36" value="36" autocomplete="off" />
+                    <span class="hint">Total de objetos en el evento</span>
+                </div>
+
+                <div class="field">
+                    <label for="freePacks">
+                        <svg width="20" height="20" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="pkG" x1="0%" y1="0%" x2="30%" y2="100%">
+                                    <stop offset="0%" stop-color="#ffffff" />
+                                    <stop offset="45%" stop-color="#d8e8f0" />
+                                    <stop offset="100%" stop-color="#8aaabb" />
+                                </linearGradient>
+                            </defs>
+                            <path fill="url(#pkG)"
+                                d="m 30.731103,155.1425 4.569472,-17.0535 18.184795,-18.1848 16.645733,4.46022 -0.680781,2.5407 3.41094,1.96931 13.632359,-13.63236 10.088528,5.82462 v 23.66689 l 3.246353,5.62285 v 13.21234 l -4.197306,-2.42331 5.515844,9.55373 5.47692,-1.46754 v -23.01108 l 5.67191,-5.67191 -5.33181,-3.07832 v -15.53725 l 10.5141,-6.07032 9.22792,9.22793 4.69171,2.70875 9.99733,-5.77196 h 13.25172 l 10.36172,10.36172 5.77092,9.99552 4.21075,7.29324 v 6.45586 h 3.94409 v -13.87856 l -8.17843,-8.17844 2.19402,-8.18821 -17.32509,-17.32509 -10.23141,-2.7415 -5.79835,1.55367 -6.9701,1.86763 -3.46203,-3.46203 -1.93837,-7.234095 3.32039,-5.75108 h 11.21465 l 7.98419,-7.984184 -37.64581,-65.20445 H 98.636927 l -38.438653,66.577699 7.84916,7.84916 h 8.780323 l 2.24158,8.36569 -2.579602,4.468 -6.38073,3.68392 -7.304552,-1.95725 -5.130593,-2.96215 -10.606167,2.84191 -4.87243,1.30557 -6.856105,11.87512 -3.252531,12.13861 -3.330316,12.42891 z" />
+                        </svg>
+                        Paquetes Gratis
+                    </label>
+                    <input type="number" id="freePacks" min="0" placeholder="0" value="0" autocomplete="off" />
+                    <span class="hint">Packs gratuitos del evento</span>
+                </div>
+
+            </div>
+
+            <div class="vmsg" id="vmsg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <triangle />
+                    <path
+                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span id="vmsgTxt"></span>
+            </div>
+
+            <button class="btn-calc" id="calcBtn" onclick="calculate()">
+                <span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                    Calcular
+                </span>
+            </button>
+        </section>
+
+
+
+
+        <!-- ── RESULTS ── -->
+        <section id="results">
+
+            <div class="banner" id="banner">
+                <div class="banner-ico" id="bico">🏆</div>
+                <div>
+                    <div class="banner-ttl" id="bttl"></div>
+                    <div class="banner-det" id="bdet"></div>
+                </div>
+            </div>
+
+            <!-- sgrid is rendered BELOW breakdown — see after panel -->
+
+
+            <!-- Breakdown →→ -->
+            <div class="panel">
+                <div class="panel-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                    </svg>
+                    Desglose de Compras
+                </div>
+                <div class="bwrap">
+                    <table class="bt">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Método</th>
+                                <th>Precio</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── SGRID — 2 FILAS (debajo del desglose) ──────────────── -->
+            <!-- Fila 1: cuántos se compran con cada método -->
+            <p class="sg-title">Resumen de Compras</p>
+            <div class="sgrid sgrid-3" style="margin-bottom:10px">
+                <div class="scard ca-cyan">
+                    <div class="s-ico">
+                        <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="mgS1" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#b8f0ff" />
+                                    <stop offset="35%" stop-color="#40d8f0" />
+                                    <stop offset="100%" stop-color="#1a8aaa" />
+                                </linearGradient>
+                            </defs>
+                            <path fill="url(#mgS1)"
+                                d="m 31.722429,157.12515 22.304832,14.86989 19.330855,-1.48699 V 112.51549 L 66.72656,110.73857 V 64.931846 L 43.600429,51.579968 v 83.240352 l -3.956348,3.95635 -5.366396,-3.09829 z" />
+                            <path fill="url(#mgS1)"
+                                d="m 89.219331,138.28996 23.853459,-13.7718 V 79.801735 l 4.43015,-4.430148 V 18.835192 H 95.167286 l -18.58736,18.587361 v 18.58736 h 9.169764 z" />
+                            <path fill="url(#mgS1)"
+                                d="m 130.35936,52.540273 v 81.784387 l -11.04153,2.95857 v 22.32024 L 140.986,172.1136 h 19.11313 v -61.0851 l -6.38372,-1.71051 V 63.444857 Z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 35,60 18,0 0,28 -18,0 z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 82,22 14,0 0,28 -14,0 z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 130,57 14,0 0,28 -14,0 z" />
+                        </svg>
+                    </div>
+                    <div class="s-lbl">Con Metales</div>
+                    <div class="s-val" id="r-bmetals">—</div>
+                    <div class="s-sub">objetos fabricados</div>
+                    <div class="s-cost badge badge-metals"><span id="r-bmetals-cost">0</span> <svg width="10"
+                            height="10" viewBox="0 0 200 200" style="vertical-align:middle;margin-top:-2px">
+                            <path fill="currentColor"
+                                d="m 31.722429,157.12515 22.304832,14.86989 19.330855,-1.48699 V 112.51549 L 66.72656,110.73857 V 64.931846 L 43.600429,51.579968 v 83.240352 l -3.956348,3.95635 -5.366396,-3.09829 z" />
+                            <path fill="currentColor"
+                                d="m 89.219331,138.28996 23.853459,-13.7718 V 79.801735 l 4.43015,-4.430148 V 18.835192 H 95.167286 l -18.58736,18.587361 v 18.58736 h 9.169764 z" />
+                            <path fill="currentColor"
+                                d="m 130.35936,52.540273 v 81.784387 l -11.04153,2.95857 v 22.32024 L 140.986,172.1136 h 19.11313 v -61.0851 l -6.38372,-1.71051 V 63.444857 Z" />
+                        </svg></div>
+                </div>
+                <div class="scard ca-green">
+                    <div class="s-ico">
+                        <svg width="26" height="26" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="pkS2" x1="0%" y1="0%" x2="30%" y2="100%">
+                                    <stop offset="0%" stop-color="#ffffff" />
+                                    <stop offset="45%" stop-color="#d8e8f0" />
+                                    <stop offset="100%" stop-color="#8aaabb" />
+                                </linearGradient>
+                            </defs>
+                            <path fill="url(#pkS2)"
+                                d="m 30.731103,155.1425 4.569472,-17.0535 18.184795,-18.1848 16.645733,4.46022 -0.680781,2.5407 3.41094,1.96931 13.632359,-13.63236 10.088528,5.82462 v 23.66689 l 3.246353,5.62285 v 13.21234 l -4.197306,-2.42331 5.515844,9.55373 5.47692,-1.46754 v -23.01108 l 5.67191,-5.67191 -5.33181,-3.07832 v -15.53725 l 10.5141,-6.07032 9.22792,9.22793 4.69171,2.70875 9.99733,-5.77196 h 13.25172 l 10.36172,10.36172 5.77092,9.99552 4.21075,7.29324 v 6.45586 h 3.94409 v -13.87856 l -8.17843,-8.17844 2.19402,-8.18821 -17.32509,-17.32509 -10.23141,-2.7415 -5.79835,1.55367 -6.9701,1.86763 -3.46203,-3.46203 -1.93837,-7.234095 3.32039,-5.75108 h 11.21465 l 7.98419,-7.984184 -37.64581,-65.20445 H 98.636927 l -38.438653,66.577699 7.84916,7.84916 h 8.780323 l 2.24158,8.36569 -2.579602,4.468 -6.38073,3.68392 -7.304552,-1.95725 -5.130593,-2.96215 -10.606167,2.84191 -4.87243,1.30557 -6.856105,11.87512 -3.252531,12.13861 -3.330316,12.42891 z" />
+                        </svg>
+                    </div>
+                    <div class="s-lbl">Gratis</div>
+                    <div class="s-val" id="r-free">—</div>
+                    <div class="s-sub">packs del evento</div>
+                    <div class="s-cost badge badge-free"><span id="r-free-cost">0</span> AC</div>
+                </div>
+                <div class="scard ca-gold">
+                    <div class="s-ico">
+                        <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="100" r="98" fill="#FFC107" />
+                            <circle cx="100" cy="100" r="82" fill="#212121" />
+                            <path fill="#ffffff"
+                                d="m 42.379182,130.11152 h 11.895911 l -2.230483,10.40892 h 14.374225 l 6.443619,-9.16976 30.235436,-0.24784 -5.452289,-15.86121 H 78.314746 L 90.70632,77.571251 114.74597,141.7596 h 43.12268 v -24.53532 h -14.37423 v 10.16109 H 127.38538 L 112.26495,70.95519 h 25.03369 4.46096 v 6.120398 h 13.3829 V 55.762082 H 78.562577 L 68.574888,93.036646 H 35.687732 l 4.367535,16.299854 h 19.672118 v 6.15296 H 35.439901 Z" />
+                        </svg>
+                    </div>
+                    <div class="s-lbl">Con Apex Coins</div>
+                    <div class="s-val" id="r-bcoins">—</div>
+                    <div class="s-sub">objetos pagados</div>
+                    <div class="s-cost badge badge-coins"><span id="r-bcoins-cost">0</span> AC</div>
+                </div>
+            </div>
+            <!-- Fila 2: recursos sobrantes y faltantes -->
+            <p class="sg-title">Resumen de Monedas</p>
+            <div class="sgrid sgrid-3" style="margin-bottom:20px">
+                <div class="scard ca-cyan">
+                    <div class="s-ico">
+                        <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="mgS2" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="#b8f0ff" />
+                                    <stop offset="35%" stop-color="#40d8f0" />
+                                    <stop offset="100%" stop-color="#1a8aaa" />
+                                </linearGradient>
+                            </defs>
+                            <path fill="url(#mgS2)"
+                                d="m 31.722429,157.12515 22.304832,14.86989 19.330855,-1.48699 V 112.51549 L 66.72656,110.73857 V 64.931846 L 43.600429,51.579968 v 83.240352 l -3.956348,3.95635 -5.366396,-3.09829 z" />
+                            <path fill="url(#mgS2)"
+                                d="m 89.219331,138.28996 23.853459,-13.7718 V 79.801735 l 4.43015,-4.430148 V 18.835192 H 95.167286 l -18.58736,18.587361 v 18.58736 h 9.169764 z" />
+                            <path fill="url(#mgS2)"
+                                d="m 130.35936,52.540273 v 81.784387 l -11.04153,2.95857 v 22.32024 L 140.986,172.1136 h 19.11313 v -61.0851 l -6.38372,-1.71051 V 63.444857 Z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 35,60 18,0 0,28 -18,0 z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 82,22 14,0 0,28 -14,0 z" />
+                            <path fill="rgba(255,255,255,0.38)" d="m 130,57 14,0 0,28 -14,0 z" />
+                        </svg>
+                    </div>
+                    <div class="s-lbl">Metales sobrantes</div>
+                    <div class="s-val" id="r-mleft">—</div>
+                    <div class="s-sub">⧐ de fabricación</div>
+                </div>
+                <div class="scard ca-gold">
+                    <div class="s-ico">
+                        <svg width="22" height="22" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="100" r="98" fill="#FFC107" />
+                            <circle cx="100" cy="100" r="82" fill="#212121" />
+                            <path fill="#ffffff"
+                                d="m 42.379182,130.11152 h 11.895911 l -2.230483,10.40892 h 14.374225 l 6.443619,-9.16976 30.235436,-0.24784 -5.452289,-15.86121 H 78.314746 L 90.70632,77.571251 114.74597,141.7596 h 43.12268 v -24.53532 h -14.37423 v 10.16109 H 127.38538 L 112.26495,70.95519 h 25.03369 4.46096 v 6.120398 h 13.3829 V 55.762082 H 78.562577 L 68.574888,93.036646 H 35.687732 l 4.367535,16.299854 h 19.672118 v 6.15296 H 35.439901 Z" />
+                        </svg>
+                    </div>
+                    <div class="s-lbl">AC usadas</div>
+                    <div class="s-val" id="r-cleft">—</div>
+                    <div class="s-sub">Apex Coins gastadas</div>
+                </div>
+                <div class="scard ca-red">
+                    <div class="s-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f0a040"
+                            stroke-width="2">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01" />
+                        </svg></div>
+                    <div class="s-lbl">AC faltantes</div>
+                    <div class="s-val" id="r-cneed">—</div>
+                    <div class="s-sub">necesitas comprar</div>
+                </div>
+            </div>
+
+
+            <div class="panel">
+                <div class="panel-title">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    Consejos Estratégicos
+                </div>
+                <ul class="tips" id="tips"></ul>
+            </div>
+
+        </section>
+
+        <footer>Apex Event Calculator &nbsp;|&nbsp; Hecho con <span>♥</span> para la comunidad.<br />
+            Los precios se basan en eventos anteriores y pueden variar.</footer>
+    </div><!-- /wrap -->
+
+    <script>
+        // ── DATA ──────────────────────────────────────────────────────────────────
+        const PRICES = [100, 100, 100, 200, 200, 700, 700, 700, 700, 700, 700, 700, 700, 1000, 1000, 1000, 1000, 1000, 1000];
+        const METALS_PER = 1650;
+        const THRESHOLD = 1000;
+
+
+        // ── VALIDATION ────────────────────────────────────────────────────────────
+        function validate(coins, metals, total, free) {
+            const e = [];
+            if (isNaN(coins) || coins < 0) e.push('Apex Coins ≥ 0.');
+            if (isNaN(metals) || metals < 0) e.push('Metales ≥ 0.');
+            if (isNaN(total) || total < 1) e.push('Objetos ≥ 1.');
+            if (isNaN(free) || free < 0) e.push('Paquetes gratis ≥ 0.');
+            if (!isNaN(free) && !isNaN(total) && free > total) e.push('Paquetes gratis no puede superar el total de objetos.');
+            return e;
+        }
+
+        // ── CALC LOGIC ────────────────────────────────────────────────────────────
+        // ESTRATEGIA ÓPTIMA (según reglascalculadra.md):
+        // 1. Packs gratis → se restan del total (van AL FINAL del desglose).
+        // 2. Metales → cubren los ÚLTIMOS objetos posicionalmente (sin importar precio).
+        // 3. Apex Coins → cubren los PRIMEROS objetos (con precios de oferta progresivos).
+        // El objetivo: minimizar el gasto total en Apex Coins.
+        function runCalc(coins, metals, total, free) {
+            const need = Math.max(0, total - free);
+
+            // ── Paso 1: cuántos objetos cubre cada recurso ────────────────────────
+            const totalMetalSlots = Math.floor(metals / METALS_PER);
+            // Metales cubren los últimos min(slots, need) objetos posicionalmente
+            const metalsUsed = Math.min(totalMetalSlots, need);
+            // Coins cubren los primeros objetos (los que tienen descuento)
+            const coinsItems = need - metalsUsed;
+
+            // ── Paso 2: simular compras ───────────────────────────────────────────
+            let coinsSpent = 0;
+            let bCoins = 0, bMetals = 0;
+            const purchases = [];
+
+            // Primeros objetos → Apex Coins (precios de oferta)
+            for (let i = 0; i < coinsItems; i++) {
+                const price = i < PRICES.length ? PRICES[i] : PRICES[PRICES.length - 1];
+                coinsSpent += price;
+                bCoins++;
+                purchases.push({ n: i + 1, price, m: 'coins' });
+            }
+
+            // Últimos objetos → Metales
+            for (let i = coinsItems; i < need; i++) {
+                const price = i < PRICES.length ? PRICES[i] : PRICES[PRICES.length - 1];
+                bMetals++;
+                purchases.push({ n: i + 1, price, m: 'metals' });
+            }
+
+            // ── Paso 3: calcular cuántas Coins debe COMPRAR el usuario ────────────
+            const coinsNeeded = Math.max(0, coinsSpent - coins);
+            const cLeft = Math.max(0, coins - coinsSpent);
+            const coinsCovered = Math.min(coins, coinsSpent);
+
+            // Marcar cobertura: cubierto si las coins del usuario alcanzan hasta ese punto
+            let runningCoins = 0;
+            purchases.forEach(p => {
+                if (p.m === 'coins') {
+                    runningCoins += p.price;
+                    p.covered = runningCoins <= coins;
+                } else {
+                    p.covered = true; // metales siempre disponibles
+                }
+            });
+
+            return { need, free, bCoins, bMetals, cLeft, coinsNeeded, coinsSpent, coinsCovered, purchases };
+        }
+
+        // ── ANIMATE NUMBER ────────────────────────────────────────────────────────
+        function anim(el, val, dur = 550) {
+            const s = performance.now();
+            (function step(ts) {
+                const p = Math.min((ts - s) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.round(val * e).toLocaleString();
+                if (p < 1) requestAnimationFrame(step);
+            })(performance.now());
+        }
+
+        // ── RENDER ────────────────────────────────────────────────────────────────
+        function render(r, coinsInput) {
+            // HUD
+            const hud = document.getElementById('hudBar');
+            hud.style.display = 'flex';
+            document.getElementById('hudCoins').textContent = coinsInput.toLocaleString();
+            document.getElementById('hudMetals').textContent = document.getElementById('craftMetals').value || '0';
+
+            // Stats — fila 1: método de compra
+            anim(document.getElementById('r-bmetals'), r.bMetals);
+            anim(document.getElementById('r-free'), r.free);
+            anim(document.getElementById('r-bcoins'), r.bCoins);
+
+            // Totales por categoría
+            anim(document.getElementById('r-bmetals-cost'), r.bMetals * METALS_PER);
+            anim(document.getElementById('r-free-cost'), 0);
+            anim(document.getElementById('r-bcoins-cost'), r.coinsSpent);
+            // Stats — fila 2: recursos
+            const metalsLeft = Math.max(0, parseInt(document.getElementById('craftMetals').value || '0') - r.bMetals * METALS_PER);
+            anim(document.getElementById('r-mleft'), metalsLeft);
+            anim(document.getElementById('r-cleft'), r.coinsCovered);
+            anim(document.getElementById('r-cneed'), r.coinsNeeded);
+
+            // Iconos y SVGs reutilizables
+            const AC_SVG = `<svg width="40" height="40" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="100" r="98" fill="#FFC107"/><circle cx="100" cy="100" r="82" fill="#212121"/><path fill="#ffffff" d="m 42.379182,130.11152 h 11.895911 l -2.230483,10.40892 h 14.374225 l 6.443619,-9.16976 30.235436,-0.24784 -5.452289,-15.86121 H 78.314746 L 90.70632,77.571251 114.74597,141.7596 h 43.12268 v -24.53532 h -14.37423 v 10.16109 H 127.38538 L 112.26495,70.95519 h 25.03369 4.46096 v 6.120398 h 13.3829 V 55.762082 H 78.562577 L 68.574888,93.036646 H 35.687732 l 4.367535,16.299854 h 19.672118 v 6.15296 H 35.439901 Z"/></svg>`;
+            const AC_BADGE_SVG = `<svg width="13" height="13" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:3px"><circle cx="100" cy="100" r="98" fill="#FFC107"/><circle cx="100" cy="100" r="82" fill="#212121"/><path fill="#ffffff" d="m 42.379182,130.11152 h 11.895911 l -2.230483,10.40892 h 14.374225 l 6.443619,-9.16976 30.235436,-0.24784 -5.452289,-15.86121 H 78.314746 L 90.70632,77.571251 114.74597,141.7596 h 43.12268 v -24.53532 h -14.37423 v 10.16109 H 127.38538 L 112.26495,70.95519 h 25.03369 4.46096 v 6.120398 h 13.3829 V 55.762082 H 78.562577 L 68.574888,93.036646 H 35.687732 l 4.367535,16.299854 h 19.672118 v 6.15296 H 35.439901 Z"/></svg>`;
+            const M_SVG = `<svg width="13" height="13" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:3px"><defs><linearGradient id="mgT" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#b8f0ff"/><stop offset="35%" stop-color="#40d8f0"/><stop offset="100%" stop-color="#1a8aaa"/></linearGradient></defs><path fill="url(#mgT)" d="m 31.722429,157.12515 22.304832,14.86989 19.330855,-1.48699 V 112.51549 L 66.72656,110.73857 V 64.931846 L 43.600429,51.579968 v 83.240352 l -3.956348,3.95635 -5.366396,-3.09829 z"/><path fill="url(#mgT)" d="m 89.219331,138.28996 23.853459,-13.7718 V 79.801735 l 4.43015,-4.430148 V 18.835192 H 95.167286 l -18.58736,18.587361 v 18.58736 h 9.169764 z"/><path fill="url(#mgT)" d="m 130.35936,52.540273 v 81.784387 l -11.04153,2.95857 v 22.32024 L 140.986,172.1136 h 19.11313 v -61.0851 l -6.38372,-1.71051 V 63.444857 Z"/><path fill="rgba(255,255,255,0.38)" d="m 35,60 18,0 0,28 -18,0 z"/><path fill="rgba(255,255,255,0.38)" d="m 82,22 14,0 0,28 -14,0 z"/><path fill="rgba(255,255,255,0.38)" d="m 130,57 14,0 0,28 -14,0 z"/></svg>`;
+            const PACK_SVG = `<svg width="13" height="13" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:3px"><defs><linearGradient id="pkT" x1="0%" y1="0%" x2="30%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="45%" stop-color="#d8e8f0"/><stop offset="100%" stop-color="#8aaabb"/></linearGradient></defs><path fill="url(#pkT)" d="m 30.731103,155.1425 4.569472,-17.0535 18.184795,-18.1848 16.645733,4.46022 -0.680781,2.5407 3.41094,1.96931 13.632359,-13.63236 10.088528,5.82462 v 23.66689 l 3.246353,5.62285 v 13.21234 l -4.197306,-2.42331 5.515844,9.55373 5.47692,-1.46754 v -23.01108 l 5.67191,-5.67191 -5.33181,-3.07832 v -15.53725 l 10.5141,-6.07032 9.22792,9.22793 4.69171,2.70875 9.99733,-5.77196 h 13.25172 l 10.36172,10.36172 5.77092,9.99552 4.21075,7.29324 v 6.45586 h 3.94409 v -13.87856 l -8.17843,-8.17844 2.19402,-8.18821 -17.32509,-17.32509 -10.23141,-2.7415 -5.79835,1.55367 -6.9701,1.86763 -3.46203,-3.46203 -1.93837,-7.234095 3.32039,-5.75108 h 11.21465 l 7.98419,-7.984184 -37.64581,-65.20445 H 98.636927 l -38.438653,66.577699 7.84916,7.84916 h 8.780323 l 2.24158,8.36569 -2.579602,4.468 -6.38073,3.68392 -7.304552,-1.95725 -5.130593,-2.96215 -10.606167,2.84191 -4.87243,1.30557 -6.856105,11.87512 -3.252531,12.13861 -3.330316,12.42891 z"/></svg>`;
+            const WARN_SVG = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f0a040" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>`;
+            const TROPHY_SVG = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4cde8c" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-2.34c3.12-.55 5-2.66 5-4.66V6c0-.55-.45-1-1-1H6c-.55 0-1 .45-1 1v4c0 2 1.88 4.11 5 4.66z"/></svg>`;
+            const CHECK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:middle;margin-right:3px"><polyline points="20 6 9 17 4 12"/></svg>`;
+            const WARN_MINI_SVG = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:2px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>`;
+
+            // Banner
+            const ban = document.getElementById('banner');
+            ban.className = 'banner';
+            const ico = document.getElementById('bico'), ttl = document.getElementById('bttl'), det = document.getElementById('bdet');
+
+            if (r.coinsNeeded === 0) {
+                ban.classList.add('ok');
+                ico.innerHTML = TROPHY_SVG;
+                ttl.textContent = '¡Puedes completar el evento!';
+                det.innerHTML = r.cLeft > 0
+                    ? `Tienes suficientes recursos con la estrategia óptima. Te sobrarán <strong>${r.cLeft.toLocaleString()} Apex Coins</strong>.`
+                    : `Tienes exactamente los recursos necesarios para completar el evento. ¡Perfecto!`;
+            } else {
+                const pct = r.coinsNeeded / r.coinsSpent;
+                if (pct <= 0.4) {
+                    ban.classList.add('warn');
+                    ico.innerHTML = WARN_SVG;
+                    ttl.textContent = 'Casi tienes suficiente';
+                } else {
+                    ban.classList.add('fail');
+                    ico.innerHTML = AC_SVG;
+                    ttl.textContent = 'Necesitas comprar Apex Coins';
+                }
+                det.innerHTML = `Te faltan <strong>${r.coinsNeeded.toLocaleString()} Apex Coins</strong> para completar el evento.`;
+            }
+
+            // Breakdown table
+            const bBody = document.getElementById('bBody');
+            bBody.innerHTML = '';
+
+            r.purchases.forEach(p => {
+                const mb = p.m === 'coins'
+                    ? `<span class="badge badge-coins">${AC_BADGE_SVG} Apex Coins</span>`
+                    : `<span class="badge badge-metals">${M_SVG} Metales</span>`;
+
+                const st = p.covered
+                    ? `<span style="color:var(--green)">${CHECK_SVG} Cubierto</span>`
+                    : (p.m === 'metals'
+                        ? `<span style="color:var(--green)">${CHECK_SVG} Cubierto</span>`
+                        : `<span class="badge badge-alert">${WARN_MINI_SVG} Comprar AC</span>`);
+
+                const priceCell = p.m === 'coins'
+                    ? `${p.price.toLocaleString()} ${AC_BADGE_SVG}`
+                    : `${METALS_PER.toLocaleString()} ${M_SVG}`;
+
+                const rowClass = (!p.covered && p.m === 'coins') ? ' class="row-alert"' : '';
+                bBody.insertAdjacentHTML('beforeend', `<tr${rowClass}>
+                    <td style="font-weight:700;color:var(--txt1)">${p.n}</td>
+                    <td>${mb}</td><td>${priceCell}</td><td>${st}</td></tr>`);
+            });
+
+            // Packs gratis
+            const packStart = r.need + 1;
+            for (let i = 0; i < r.free; i++) {
+                bBody.insertAdjacentHTML('beforeend', `<tr>
+                    <td style="font-weight:700;color:var(--txt1)">${packStart + i}</td>
+                    <td><span class="badge badge-free">${PACK_SVG} Pack Gratis</span></td>
+                    <td>0 ${AC_BADGE_SVG}</td>
+                    <td style="color:var(--green)">${CHECK_SVG} Incluido</td></tr>`);
+            }
+
+            // Tips
+            const tipEl = document.getElementById('tips');
+            tipEl.innerHTML = '';
+
+            tipEl.insertAdjacentHTML('beforeend', `<li style="background:rgba(220,100,20,.1);border:1px solid rgba(220,100,20,.4);border-radius:8px;padding:8px 10px">
+                    <span class="tb" style="color:#f0a040;display:inline-block;vertical-align:top;margin-top:2px">${WARN_MINI_SVG}</span>
+                    <span><strong style="color:#f0a040">¡Importante!</strong> No abras los packs gratis <em>antes</em> de haber comprado todos los que se pagan con Coins. Si los abres primero, las ofertas de los objetos posteriores desaparecen y pierdes los descuentos.</span>
+                </li>`);
+
+            const tipsData = [
+                r.bMetals > 0
+                    ? `Usarás <strong>${(r.bMetals * METALS_PER).toLocaleString()} Metales de Fabricación</strong> (${r.bMetals} objeto(s) × 1 650 metales).`
+                    : `Con tus metales actuales <em>no alcanzas</em> para cubrir objetos de 1 000 AC; todos se comprarían con Coins.`,
+                `Completa los <strong>desafíos diarios</strong> del evento para obtener paquetes gratuitos antes de gastar Coins.`,
+                `Comprar <strong>4 packs a la vez</strong> garantiza un objeto <strong>legendario</strong> del evento con un descuento del -85% (600 AC en lugar de 4 000 AC).`,
+            ];
+            tipsData.forEach(t => {
+                tipEl.insertAdjacentHTML('beforeend', `<li><span class="tb">▶</span><span>${t}</span></li>`);
+            });
+
+            const sec = document.getElementById('results');
+            sec.classList.remove('show');
+            void sec.offsetWidth;
+            sec.classList.add('show');
+            setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        }
+
+        // ── MAIN ──────────────────────────────────────────────────────────────────
+        function calculate() {
+            const coins = parseInt(document.getElementById('apexCoins').value) || 0;
+            const metals = parseInt(document.getElementById('craftMetals').value) || 0;
+            const total = parseInt(document.getElementById('totalItems').value) || 0;
+            const free = parseInt(document.getElementById('freePacks').value) || 0;
+
+            ['apexCoins', 'craftMetals', 'totalItems', 'freePacks'].forEach(id => document.getElementById(id).classList.remove('err'));
+
+            const errs = validate(coins, metals, total, free);
+            const vm = document.getElementById('vmsg');
+            if (errs.length) {
+                vm.classList.add('show');
+                document.getElementById('vmsgTxt').textContent = errs.join(' | ');
+                if (isNaN(coins) || coins < 0) document.getElementById('apexCoins').classList.add('err');
+                if (isNaN(metals) || metals < 0) document.getElementById('craftMetals').classList.add('err');
+                if (isNaN(total) || total < 1) document.getElementById('totalItems').classList.add('err');
+                if (isNaN(free) || free < 0) document.getElementById('freePacks').classList.add('err');
+                return;
+            }
+            vm.classList.remove('show');
+            render(runCalc(coins, metals, total, free), coins);
+        }
+
+        // Enter key
+        document.querySelectorAll('input').forEach(i => {
+            i.addEventListener('keydown', e => { if (e.key === 'Enter') calculate() });
+            i.addEventListener('input', () => i.classList.remove('err'));
+        });
+    </script>
+</body>
+
+</html>
