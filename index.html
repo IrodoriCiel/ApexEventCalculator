@@ -139,22 +139,38 @@
         }
 
         .gumdam-subtitle {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--red2);
-            letter-spacing: .18em;
+            font-size: 1.35rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff8c50 0%, #ff5520 25%, #e8323c 50%, #c41e3a 75%, #f0c040 100%);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: .22em;
             text-transform: uppercase;
-            margin: 12px 0 6px 0;
-            text-shadow: 0 0 16px rgba(196, 30, 58, 0.6), 0 0 32px rgba(232, 50, 60, 0.3);
-            animation: gumdam-glow 2s ease-in-out infinite;
+            margin: 16px 0 8px 0;
+            text-shadow: 0 0 20px rgba(232, 50, 60, 0.8), 0 0 40px rgba(255, 85, 32, 0.5);
+            filter: drop-shadow(0 0 12px rgba(196, 30, 58, 0.6));
+            animation: gumdam-glow 3s ease-in-out infinite, gumdam-scale 3s ease-in-out infinite;
         }
 
         @keyframes gumdam-glow {
             0%, 100% {
-                text-shadow: 0 0 16px rgba(196, 30, 58, 0.6), 0 0 32px rgba(232, 50, 60, 0.3);
+                background-position: 0% center;
+                text-shadow: 0 0 20px rgba(232, 50, 60, 0.6), 0 0 40px rgba(255, 85, 32, 0.3);
             }
             50% {
-                text-shadow: 0 0 24px rgba(196, 30, 58, 0.8), 0 0 48px rgba(232, 50, 60, 0.5);
+                background-position: 100% center;
+                text-shadow: 0 0 30px rgba(232, 50, 60, 1), 0 0 60px rgba(255, 85, 32, 0.6), 0 0 10px rgba(200, 160, 32, 0.4);
+            }
+        }
+
+        @keyframes gumdam-scale {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.08);
             }
         }
 
@@ -885,7 +901,7 @@
 
                 <h1>Apex Event Calc</h1>
             </div>
-            <p class="gumdam-subtitle">Gumdam's Event</p>
+            <p class="gumdam-subtitle">Gundam's Event</p>
             <p class="subtitle">Calculadora de Colección · Apex Legends</p>
             <div class="hline"></div>
         </header>
